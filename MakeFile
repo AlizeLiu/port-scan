@@ -1,0 +1,49 @@
+GOCMD=go
+GOBUILD=$(GOCMD) build
+GOCLEAN=$(GOCMD) clean
+GOTEST=$(GOCMD) test
+GOGET=$(GOCMD) get
+BINARY_NAME=port-scan
+BINARY_UNIX=release/$(BINARY_NAME)_unix
+BINARY_WINDOWS=release/$(BINARY_NAME).exe
+BINARY_DARWIN=release/$(BINARY_NAME)_darwin
+
+# 默认目标，当没有提供参数时执行
+all: deps test build-mac
+
+vet:
+	go vet -v ./...
+
+# 测试项目
+test:
+	$(GOTEST) -v ./...
+
+# 为不同平台构建项目
+build: build-linux build-windows build-mac
+
+# 为Linux平台构建
+build-linux:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_UNIX) -v
+
+# 为Windows平台构建
+build-windows:
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) -o $(BINARY_WINDOWS) -v
+
+# 为macOS平台构建
+build-mac:
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(BINARY_DARWIN) -v
+
+# 运行项目
+run:
+	$(GOBUILD) -o $(BINARY_NAME) -v
+
+# 清理构建产物
+clean:
+	$(GOCLEAN)
+	rm -f $(BINARY_UNIX) $(BINARY_WINDOWS) $(BINARY_DARWIN)
+
+# 安装依赖
+deps:
+	GOGET -v github.com/spf13/cobra
+
+.PHONY: all test build build-linux build-windows build-mac clean deps
